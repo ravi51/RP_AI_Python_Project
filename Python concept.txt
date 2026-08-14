@@ -1,0 +1,21 @@
+GIL =Global interpreter lock
+mutex = it is locking system
+
+
+Create Virtual Environment
+  venv = virtual environment folder name
+
+commands: 
+ 1) python -m venv venv
+
+Activate Virtual Environment
+ 2) venv\Scripts\activate
+
+Install Packages
+3) pip install selenium(package name)
+
+Deactivate Virtual Environment
+4) deactivate
+
+to go in folder
+5) cd foldername
