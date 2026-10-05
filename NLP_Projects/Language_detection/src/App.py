@@ -1,10 +1,14 @@
 import streamlit as st
 import pickle
 
+threshold = 0.50
 
 #load vectorizer 
-with  open(r'E:/AI_Projects/NLP_Projects/Language_detection/Models/final_Vector.pkl', 'rb') as file:
-    vectorizer = pickle.load(file)
+with  open(r'E:/AI_Projects/NLP_Projects/Language_detection/Models/final_CVector.pkl', 'rb') as file:
+    Cvectorizer = pickle.load(file)
+
+with  open(r'E:/AI_Projects/NLP_Projects/Language_detection/Models/final_TFVector.pkl', 'rb') as file:
+    TFvectorizer = pickle.load(file)
 
 # load model
 with open(r'E:/AI_Projects/NLP_Projects/Language_detection/Models/Final_LR_model.pkl', 'rb') as file:
@@ -75,13 +79,46 @@ if st.button("Detect Language"):
         #preprocess the input text
         Input_text=Input_text.lower()
 
-        #convert text into numerical
-        Input_text_vectorized = vectorizer.transform([Input_text])
+        #convert text into numerical count vectorizer
+        Input_text_cvectorized = Cvectorizer.transform([Input_text])
 
-        #make prediction using the loaded model
-        prediction = model.predict(Input_text_vectorized)
+        #convert text into numerical tf-idf vectorizer
+        Input_text_tvectorized = TFvectorizer.transform([Input_text])
 
-        st.success(f"The detected language is: {prediction[0]}")
+        print(f"Non-zero elements in Count Vectorizer: {Input_text_cvectorized.nnz}")
+        print(f"Non-zero elements in TF-IDF Vectorizer: {Input_text_tvectorized.nnz}")
+        #Checking unknown vocabulary
+        if Input_text_cvectorized.nnz == 0 and Input_text_tvectorized.nnz == 0:
+            
+            st.error(
+                "⚠️ The input text does not contain any recognizable "
+                "characters for the supported languages."
+            )
+        else:
+            #make prediction using the loaded model
+            prediction = model.predict(Input_text_cvectorized)
+            probabilities=model.predict_proba(Input_text_cvectorized)[0]
+            max_probability = probabilities.max()
+            print(f"**Prediction: {prediction[0]}, Max Probability: {max_probability:.2%}")
+
+            if max_probability <= threshold:
+                prediction = model.predict(Input_text_tvectorized)
+                probabilities=model.predict_proba(Input_text_tvectorized)[0]
+                max_probability = probabilities.max()
+                print(f"++Prediction: {prediction[0]}, Max Probability: {max_probability:.2%}")
+
+            if max_probability >= threshold:
+                detected_language = DISPLAY_LANGUAGE_NAMES.get(prediction[0], prediction[0])
+                st.success(f"The detected language is: {detected_language}")
+                st.success(f"Confidence: {max_probability:.2%}")
+                
+            else:
+                st.success(f"Confidence: {max_probability:.2%}")
+                st.error(
+                           "⚠️ I am not confident that this text belongs to one "
+                                           "of the languages supported by this model."
+                        )
+
     else:
         st.error(
                 "⚠️ I am not confident that this text belongs to one "
